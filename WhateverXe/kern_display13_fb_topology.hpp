@@ -60,7 +60,7 @@ inline bool xeLPDWiring(const Display13OutputWiring &w) {
 // Current handoff adopts one real GOP on pipe A. A dual board policy does not
 // authorize ignoring a second firmware scanout or an unknown/unpowered bank.
 inline uint32_t bootstrapDDI(const Display13OutputWiring &w,bool complete,uint32_t powered,uint32_t active,uint32_t trans,bool dpSource=false) {
-    return complete && active==1 && (powered&1) ? bootDDI(w,trans,dpSource) : UINT32_MAX;
+    return complete && active && !(active&(active-1)) && (powered&active)==active ? bootDDI(w,trans,dpSource) : UINT32_MAX; // vbtfix: adopt any single powered active pipe, not only pipe A
 }
 // Preserve donor record count, DDI identities, memory sizing and unrelated
 // settings. Native objects retain pointers to this stable copy. Preflight
