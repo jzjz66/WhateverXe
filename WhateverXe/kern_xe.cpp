@@ -7551,9 +7551,11 @@ uint8_t *XE::display13SSTPort(void *port) {
     c.controller!=s->adlnTopologyController || !adlnWriterMappingBound() ||
     c.clockFaulted || c.memoryFaulted || c.panelFaulted || c.clockStopped || !s->adlnOutputWiring.described())return nullptr;
  auto p=static_cast<uint8_t *>(port);auto config=Display13FBMemory::field<uint32_t *>(p,0x548);
+ const auto portMode=Display13FBMemory::field<uint32_t>(p,0x550);
  if(!Display13FBTopology::selected(s->adlnPlatform,config,s->adlnOutputWiring) ||
     !(s->adlnOutputWiring.links()&(1U<<config[0])) || p[0x117] ||
-    Display13FBMemory::field<uint32_t>(p,0x120)!=config[0] || Display13FBMemory::field<uint32_t>(p,0x550)!=(config[0]>=3?((s->adlnOutputWiring.typeC&(1U<<config[0]))?3U:4U):1U) ||
+    Display13FBMemory::field<uint32_t>(p,0x120)!=config[0] ||
+    (config[0]>=3 ? portMode!=(s->adlnOutputWiring.typeC&(1U<<config[0])?3U:4U) : portMode>1U) ||
     Display13FBMemory::field<void *>(p,0x578)!=c.access)return nullptr;
  return p;
 }
@@ -9152,7 +9154,7 @@ void XE::adlnSetDualClock(IOService *controller,uint64_t nativeHz) {
             evidence[7]=reinterpret_cast<bool (*)(const IOWorkLoop *)>(callbackXE->adlnWorkLoopInGate)(loop);
             if(!evidence[7]) {
                 ready=reinterpret_cast<bool (*)(IOWorkLoop *)>(callbackXE->adlnWorkLoopTryClose)(loop);
-                if(ready) {acquired=loop;evidence[8]=1;}
+                if(ready) {acquired=loop;evidence[8]=1;} else if(!active) {ready=true;evidence[8]=2;}
             }
         }
         if(ready)for(unsigned p=0;p<3;++p)if(active&(1U<<p)) {
