@@ -112,8 +112,7 @@ inline void panelFacts(const uint8_t *b,size_t header,size_t size,Ports &ports) 
     unsigned internal=PortCount;
     for(unsigned d=0;d<PortCount;++d)if((ports.present&(1U<<d)) &&
         ports.port[d].internal() && ports.port[d].dp()) {
-        if(internal!=PortCount)return; // no guessed panel/connector association
-        internal=d;
+        if(internal==PortCount)internal=d; // vbtfix: arbitrate the panel to the lowest internal+DP DDI (refs #29)
     }
     if(internal==PortCount)return;
     auto &p=ports.panel;
