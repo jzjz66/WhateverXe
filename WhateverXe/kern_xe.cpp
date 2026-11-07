@@ -4067,13 +4067,20 @@ void XE::adlnBootstrap(IOPCIDevice *pci) {
 	if(displayRequested && bootstrapReady) {
 		uint32_t trans=UINT32_MAX;
         if(board.dsi)bootDDI=0;
-		else if(AlderLakeN::value(result,0x60400,trans))bootDDI=Display13FBTopology::bootstrapDDI(board,
-			result.status==AlderLakeN::ReadoutStatus::Complete,result.poweredPipes,result.activePipes,trans,true);
+		else {
+			uint32_t act=result.activePipes;
+			if(act && !(act&(act-1))) {
+				unsigned pipe=0;while(pipe<3 && !(act&(1U<<pipe)))++pipe;
+				if(pipe<3 && AlderLakeN::value(result,0x60400+0x1000*pipe,trans))bootDDI=Display13FBTopology::bootstrapDDI(board,
+					result.status==AlderLakeN::ReadoutStatus::Complete,result.poweredPipes,result.activePipes,trans,true);
+			}
+		}
 		connector[5]=bootDDI;pci->setProperty("N97NativeBootConnector",connector,sizeof(connector));
 	}
 	pci->setProperty("N97DisplayReadoutStatus", static_cast<uint32_t>(result.status), 32);
 	SYSLOG("igfx", "AlderLakeN Display13 readout status=%u powered=%x active=%x hdmiB=%x; donor blocked",
 		static_cast<uint32_t>(result.status), result.poweredPipes, result.activePipes, result.hdmiBPipes);
+	{uint32_t rd[]={1,static_cast<uint32_t>(result.status),result.poweredPipes,result.activePipes,result.hdmiBPipes};pci->setProperty("N97ReadoutDetail",rd,sizeof(rd));} // vbtfix: publish readout pipes
 	// Mobile and TC configurations adopt a validated firmware surface at
 	// controller start. Preserve the established ADL-N Combo bootstrap.
 	if (linearTest && !Display13FBTopology::deferredBootPrepare(board,adlpDisplaySelected)) {
