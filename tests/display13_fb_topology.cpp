@@ -98,7 +98,7 @@ int main() {
         assert(bootstrapDDI(w,true,3,3,0x89030100)==UINT32_MAX); // No silent second-GOP takeover.
         assert(bootstrapDDI(w,true,2,1,0x89030100)==UINT32_MAX);
         assert(bootstrapDDI(w,false,3,1,0x89030100)==UINT32_MAX);
-        assert(bootstrapDDI(w,true,3,2,0x91030100)==UINT32_MAX); // Boot backend still adopts pipe A.
+        assert(bootstrapDDI(w,true,3,2,0x91030100)==((mask&2)?1U:UINT32_MAX)); // vbtfix: adopt any single powered active pipe, not only pipe A.
         for(unsigned d=0;d<Ports;++d) {
             const bool active=(mask&(1U<<d))!=0;
             assert(selected(out.data(),out.config(d),w)==active);
